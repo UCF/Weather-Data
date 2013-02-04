@@ -257,6 +257,9 @@ function make_new_cachedata($cache_data, $weather_url) {
 		fwrite($filehandle, $string);
 		fclose($filehandle);
 	}
+	else {
+		$weather['successfulCache'] = 'no';
+	}
 	
 	// Finally, return the newly-grabbed content:
 	return $weather;
