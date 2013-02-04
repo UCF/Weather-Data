@@ -35,8 +35,7 @@ function get_weather_data($forecasttype='current') {
 	// Check if cached weather data already exists
 	$cache_data_contents = file_get_contents($cache_data);
 	
-	// The last data cache must be successful, and the 
-	// cache time must be within now and the cache duration 
+	// The cache time must be within now and the cache duration 
 	// to return cached data:
 	# TODO: refactor to properly handle a weeks' worth of weather data...
 	if ($cache_data_contents) {
