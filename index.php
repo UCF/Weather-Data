@@ -49,7 +49,7 @@ function get_weather_data($forecasttype='current') {
 				list($c_success, $c_provider, $c_cond, $c_temp, $c_imgcode, $c_img_s, $c_img_m, $c_img_l, $c_cachetime, $c_feedtime) = explode(CACHE_DELIMITER, $cache_data_contents);
 				break;
 		}		
-		if ( ($c_success == 'yes') && ( date('YmdHis', strtotime($c_cachetime)) > date('YmdHis', strtotime('Now -'.WEATHER_CACHE_DURATION.' seconds')) ) ) {
+		if ( date('YmdHis', strtotime($c_cachetime)) > date('YmdHis', strtotime('Now -'.WEATHER_CACHE_DURATION.' seconds')) ) {
 			return array(
 				'successfulCache' 	=> $c_success,
 				'provider' 			=> $c_provider,
