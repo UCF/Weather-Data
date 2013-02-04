@@ -93,10 +93,10 @@ function make_new_cachedata($cache_data, $weather_url) {
 		'feedUpdatedAt' 	=> '',
 	);
 	
-	// Set at timeout and grab the weather feed
+	// Set a timeout and grab the weather feed
 	$opts = array('http' => array(
 							'method' => 'GET',
-							'timeout' => 8
+							'timeout' => WEATHER_URL_TIMEOUT
 							));
 	$context = stream_context_create($opts);
 	$raw_weather = file_get_contents($weather_url, false, $context);
