@@ -51,16 +51,16 @@ function get_weather_data($forecasttype='current') {
 		}		
 		if ( date('YmdHis', strtotime($c_cachetime)) > date('YmdHis', strtotime('Now -'.WEATHER_CACHE_DURATION.' seconds')) ) {
 			return array(
-				'successfulCache' 	=> $c_success,
-				'provider' 			=> $c_provider,
-				'condition' 		=> $c_cond,
-				'temp' 				=> $c_temp,
-				'imgCode' 			=> (int)$c_imgcode,
-				'imgSmall' 			=> $c_img_s,
-				'imgMedium' 		=> $c_img_m,
-				'imgLarge' 			=> $c_img_l,
-				'cachedAt' 			=> $c_cachetime,
-				'feedUpdatedAt' 	=> $c_feedtime, 
+				'successfulCache'	=> $c_success,
+				'provider'			=> $c_provider,
+				'condition'			=> $c_cond,
+				'temp'				=> $c_temp,
+				'imgCode'			=> (int)$c_imgcode,
+				'imgSmall'			=> $c_img_s,
+				'imgMedium'			=> $c_img_m,
+				'imgLarge'			=> $c_img_l,
+				'cachedAt'			=> $c_cachetime,
+				'feedUpdatedAt'		=> $c_feedtime, 
 			);
 		}
 		else {
@@ -82,15 +82,15 @@ function get_weather_data($forecasttype='current') {
 function make_new_cachedata($cache_data, $weather_url) {
 	$weather = array(
 		'successfulCache'	=> '',
-		'provider' 			=> '',
-		'condition' 		=> 'Fair', 		// Fallback
-		'temp' 				=> '80&#186;',	// Fallback
-		'imgCode' 			=> 34,			// Fallback
-		'imgSmall' 			=> '',
-		'imgMedium' 		=> '',
-		'imgLarge' 			=> '',
-		'cachedAt' 			=> '',
-		'feedUpdatedAt' 	=> '',
+		'provider'			=> '',
+		'condition'			=> 'Fair', 		// Fallback
+		'temp'				=> '80&#186;',	// Fallback
+		'imgCode'			=> 34,			// Fallback
+		'imgSmall'			=> '',
+		'imgMedium'			=> '',
+		'imgLarge'			=> '',
+		'cachedAt'			=> '',
+		'feedUpdatedAt'		=> '',
 	);
 	
 	// Set a timeout and grab the weather feed
