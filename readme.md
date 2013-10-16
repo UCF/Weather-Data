@@ -1,8 +1,8 @@
 # Weather Data Grabber
 
 A basic PHP script that grabs and outputs weather data in JSON for use on other UCF sites.
-Uses a simple caching mechanism that saves previously grabbed results to a text file and
-refers to that text file if another request is made within the set cache duration.
+Uses a simple caching mechanism that saves previously grabbed results and
+refers to that saved file if another request is made within the set cache duration.
 
 The script is currently written to accept and parse NOAA XML data.  Condition codes for images
 are strings by default but are converted to the Weather.com/Yahoo condition code standard
@@ -18,10 +18,10 @@ relatively easily to handle extended forecasts.
 
 ## Returned Values
 
-### successfulCache (string)
-Either 'yes' or 'no'; if the requested data was successfully cached, this value is set to 'yes'.
-If the value is ever 'no', fallback weather data is saved to the cache anyway so that empty
-JSON is never returned.
+### successfulFetch (string--previously 'successfulCache')
+Either 'yes' or 'no'; if the requested data was successfully fetched from the specified external source,
+this value is set to 'yes'. If the value is ever 'no', fallback weather data is saved to the cache anyway 
+so that empty JSON is never returned.
 
 ### provider (string)
 The URL of the weather data provider.
