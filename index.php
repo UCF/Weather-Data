@@ -37,11 +37,11 @@ function get_weather_data($forecasttype='current') {
 	
 	// The cache time must be within now and the cache duration 
 	// to return cached data:
-	# TODO: refactor to properly handle a weeks' worth of weather data...
+	// TODO: refactor to properly handle a weeks' worth of weather data...
 	if ($cache_data_contents) {
 		switch ($forecasttype) {
 			case 'forecast':
-				# TODO: setup vars for a weeks' worth of weather data...
+				// TODO: setup vars for a weeks' worth of weather data...
 				break;
 			case 'current':
 			default:
@@ -110,6 +110,7 @@ function make_new_cachedata($cache_data, $weather_url) {
 		
 		// Convert NOAA's weather icon names to standard weather codes
 		// See http://w1.weather.gov/xml/current_obs/weather.php
+		// TODO: update $weather['condition'] to use simplified phrases
 		list($weather_img_name, $ext) = explode('.', $weather['imgCode']);
 		switch ($weather_img_name) {
 			case 'bkn':
@@ -252,6 +253,7 @@ function make_new_cachedata($cache_data, $weather_url) {
 	$string = substr($string, 0, -strlen(CACHE_DELIMITER));
 	
 	// Write the new string of data to the cache file:
+	// TODO: create file on the fly if it doesn't exist yet
 	if (file_exists($cache_data)) {
 		$filehandle = fopen($cache_data, 'w') or die('Cache file open failed.');
 		fwrite($filehandle, $string);
