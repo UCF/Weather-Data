@@ -33,7 +33,7 @@ function get_weather_data($forecasttype='current') {
 	}
 	
 	// Check if cached weather data already exists
-	$cache_data_contents = file_get_contents($cache_data);
+	$cache_data_contents = file_get_contents($cache_data) ? file_get_contents($cache_data) : null;
 	
 	// The cache time must be within now and the cache duration 
 	// to return cached data:
@@ -103,9 +103,10 @@ function make_new_cachedata($cache_data, $weather_url) {
 	if ($raw_weather) {
 		$xml = simplexml_load_string($raw_weather);
 		
-		$weather['condition'] 	= (string)$xml->weather;
-		$weather['temp']		= number_format((string)$xml->temp_f).'&#186;'; // strip decimal place
-		$weather['imgCode']		= (string)$xml->icon_url_name;
+		// Make sure we get actual usable values before assigning them
+		$weather['condition'] 	= !empty($xml->weather) ? (string)$xml->weather : null;
+		$weather['temp']		= preg_match('/[0-9]+/', $xml->temp_f) ? number_format((string)$xml->temp_f).'&#186;' : null; // strip decimal place
+		$weather['imgCode']		= !empty($xml->icon_url_name) ? (string)$xml->icon_url_name : null;
 		
 		// Convert NOAA's weather icon names to standard weather codes
 		// See http://w1.weather.gov/xml/current_obs/weather.php
