@@ -26,6 +26,9 @@ is saved to the cache anyway so that empty JSON is never returned.
 ### provider (string)
 The URL of the weather data provider.
 
+### date (string)
+The date for the given set of weather conditions. (Format YYYY-MM-DD)
+
 ### condition (string)
 A weather condition phrase.  These phrases are based loosely on the Yahoo Weather API code descriptions: 
 (http://developer.yahoo.com/weather/#codetable)
@@ -53,9 +56,6 @@ Current temperature reading. (Includes degree symbol)
 
 
 ## Forecast Returned Values (per 'day')
-
-### date (string)
-The date for the given set of weather conditions. (Format YYYY-MM-DD)
 
 ### tempMax (string)
 Maximum predicted temperature for that day. (Includes degree symbol)
