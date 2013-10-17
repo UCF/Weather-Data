@@ -54,13 +54,13 @@ Current temperature reading. (Includes degree symbol)
 
 ## Forecast Returned Values (per 'day')
 
-## date (string)
+### date (string)
 The date for the given set of weather conditions. (Format YYYY-MM-DD)
 
 ### tempMax (string)
 Maximum predicted temperature for that day. (Includes degree symbol)
 
-## tempMin (string)
+### tempMin (string)
 Minimum predicted temperature for that day. (Includes degree symbol.)  Note that a 'day7' tempMin 
 is not provided by NOAA.
 
