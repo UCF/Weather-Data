@@ -75,6 +75,12 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 	// Create a new template for weather data, and determine the
 	// URL of the external weather data to grab for new fetches
 	$weather = null;
+	$weather_template = array(
+		'successfulFetch' => 'yes',
+		'provider'		  => '',
+		'cachedAt'		  => '',
+		'feedUpdatedAt'	  => '',
+	);
 	switch ($forecast_type) {
 		case 'forecastToday':
 			$weather_url = WEATHER_URL_FORECAST_TODAY;
@@ -86,15 +92,11 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 				'imgMedium'	=> '',
 				'imgLarge'	=> '',
 			);
-			$weather = array(
-				'successfulFetch' => 'yes',
-				'provider'		  => '',
-				'date'			  => '',
-				'today'			  => $time_template,
-				'tonight'		  => $time_template,
-				'cachedAt'		  => '',
-				'feedUpdatedAt'	  => '',
-			);
+			$weather = array_merge($weather_template, array(
+				'date'	  => '',
+				'today'	  => $time_template,
+				'tonight' => $time_template,
+			));
 			break;
 		case 'forecastExtended':
 			$weather_url = WEATHER_URL_FORECAST_EXTENDED;
@@ -108,38 +110,30 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 				'imgMedium'	=> '',
 				'imgLarge'	=> '',
 			);
-			$weather = array(
-				'successfulFetch'	=> 'yes',
-				'provider'			=> '',
-				'days'				=> array(
-											'day1' => $date_template,
-											'day2' => $date_template,
-											'day3' => $date_template,
-											'day4' => $date_template,
-											'day5' => $date_template,
-											'day6' => $date_template,
-											'day7' => $date_template,
-										),
-				'cachedAt'			=> '',
-				'feedUpdatedAt'		=> '',
-			);
+			$weather = array_merge($weather_template, array(
+				'days' => array(
+							'day1' => $date_template,
+							'day2' => $date_template,
+							'day3' => $date_template,
+							'day4' => $date_template,
+							'day5' => $date_template,
+							'day6' => $date_template,
+							'day7' => $date_template,
+						),
+			));
 			break;
 		case 'current':
 		default:
 			$weather_url = WEATHER_URL_CURRENT;
-			$weather = array(
-				'successfulFetch' => 'yes',
-				'provider'		  => '',
-				'date'			  => '',
-				'condition'		  => 'Fair', 	 // Fallback
-				'temp'			  => '80&#186;', // Fallback
-				'imgCode'		  => 34,		 // Fallback
-				'imgSmall'		  => '',
-				'imgMedium'		  => '',
-				'imgLarge'		  => '',
-				'cachedAt'		  => '',
-				'feedUpdatedAt'	  => '',
-			);
+			$weather = array_merge($weather_template, array(
+				'date'		=> '',
+				'condition'	=> 'Fair', 	 // Fallback
+				'temp'		=> '80&#186;', // Fallback
+				'imgCode'	=> 34,		 // Fallback
+				'imgSmall'	=> '',
+				'imgMedium'	=> '',
+				'imgLarge'	=> '',
+			));
 			break;
 	}
 	
