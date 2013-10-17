@@ -1,17 +1,23 @@
 <?php
-define('SITE_URL', 'http://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI']);
+define('SITE_URL', 'http://'.$_SERVER['SERVER_NAME'].(str_replace('?'.$_SERVER['QUERY_STRING'], '', $_SERVER['REQUEST_URI'])));
 define('SITE_PATH', dirname(__FILE__).'/');
 
 define('CACHEDATA_PATH', SITE_PATH.'data/');
 define('CACHEDATA_CURRENT', CACHEDATA_PATH.'data-current.json');
-define('CACHEDATA_FORECAST', '');
+define('CACHEDATA_FORECAST', CACHEDATA_PATH.'data-forecast.json');
 
-define('WEATHER_URL_CURRENT', 'http://w1.weather.gov/xml/current_obs/KORL.xml'); // URL to NOAA weather XML (current)
-define('WEATHER_URL_FORECAST', '');
+define('WEATHER_URL_CURRENT', 'http://w1.weather.gov/xml/current_obs/KORL.xml');
+define('WEATHER_URL_FORECAST', 'http://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php?lat=28.5898683&lon=-81.1802619&format=24+hourly&numDays=7');
 
 define('WEATHER_URL_TIMEOUT', 8);			// seconds
 define('WEATHER_CACHE_DURATION', 60 * 15); 	// seconds (15 minutes)
-define('CACHE_DELIMITER', '!@!');
+
+if (isset($_GET['data']) && $_GET['data'] == 'forecast') {
+	define('REQUESTED_DATA', 'forecast');
+}
+else {
+	define('REQUESTED_DATA', 'current');
+}
 
 
 /**
@@ -30,23 +36,21 @@ function get_weather_data($forecast_type='current') {
 			$cache_data_path = CACHEDATA_CURRENT;
 			break;
 	}
-	
+
 	// Check if cached weather data already exists
 	$cache_data_contents = @file_get_contents($cache_data_path);
 
 	// The cache time must be within now and the cache duration 
 	// to return cached data:
-	// TODO: refactor to properly handle a weeks' worth of weather data...
 	if ($cache_data_contents !== false) {
 		$cache_json = json_decode($cache_data_contents);
 		if ( date('YmdHis', strtotime($cache_json->cachedAt)) > date('YmdHis', strtotime('Now -'.WEATHER_CACHE_DURATION.' seconds')) ) {
-			$cache_json->imgCode = (int)$cache_json->imgCode;
 			return json_encode($cache_json, JSON_FORCE_OBJECT);
 		}
 		else {
 			return make_new_cachedata($forecast_type, $cache_json, $cache_data_path);
 		}
-	} 
+	}
 	else {
 		return make_new_cachedata($forecast_type, null, $cache_data_path);
 	}
@@ -60,28 +64,52 @@ function get_weather_data($forecast_type='current') {
  * @return obj
  **/
 function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
-	// Create a new template for weather data
-	$weather = array(
-		'successfulFetch'	=> 'yes',
-		'provider'			=> '',
-		'condition'			=> 'Fair', 		// Fallback
-		'temp'				=> '80&#186;',	// Fallback
-		'imgCode'			=> 34,			// Fallback
-		'imgSmall'			=> '',
-		'imgMedium'			=> '',
-		'imgLarge'			=> '',
-		'cachedAt'			=> '',
-		'feedUpdatedAt'		=> '',
-	);
-
-	// Determine the URL of the external weather data to grab for new fetches
+	// Create a new template for weather data, and determine the
+	// URL of the external weather data to grab for new fetches
+	$weather = null;
 	switch ($forecast_type) {
 		case 'forecast':
 			$weather_url = WEATHER_URL_FORECAST;
+			$date_template = array(
+									'date'			=> '',
+									'condition'		=> 'Fair', 		// Fallback
+									'tempMax'		=> '80&#186;',	// Fallback
+									'tempMin'		=> '80&#186;',	// Fallback
+									'imgCode'		=> 34,			// Fallback
+									'imgSmall'		=> '',
+									'imgMedium'		=> '',
+									'imgLarge'		=> '',
+								);
+			$weather = array(
+				'successfulFetch'	=> 'yes',
+				'provider'			=> '',
+				'day1'				=> $date_template,
+				'day2'				=> $date_template,
+				'day3'				=> $date_template,
+				'day4'				=> $date_template,
+				'day5'				=> $date_template,
+				'day6'				=> $date_template,
+				'day7'				=> $date_template,
+				'cachedAt'			=> '',
+				'feedUpdatedAt'		=> '',
+			);
 			break;
 		case 'current':
 		default:
 			$weather_url = WEATHER_URL_CURRENT;
+			$weather = array(
+				'successfulFetch'	=> 'yes',
+				'provider'			=> '',
+				'date'				=> '',
+				'condition'			=> 'Fair', 		// Fallback
+				'temp'				=> '80&#186;',	// Fallback
+				'imgCode'			=> 34,			// Fallback
+				'imgSmall'			=> '',
+				'imgMedium'			=> '',
+				'imgLarge'			=> '',
+				'cachedAt'			=> '',
+				'feedUpdatedAt'		=> '',
+			);
 			break;
 	}
 	
@@ -91,44 +119,104 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 							'timeout' => WEATHER_URL_TIMEOUT
 							));
 	$context = stream_context_create($opts);
-	$raw_weather = file_get_contents($weather_url, false, $context);
+	$raw_weather = @file_get_contents($weather_url, false, $context);
 	
 	if ($raw_weather) {
 		$xml = simplexml_load_string($raw_weather);
-		
-		// Make sure we get actual usable values before assigning them
-		$weather['temp']		= preg_match('/[0-9]+/', $xml->temp_f) ? number_format((string)$xml->temp_f).'&#186;' : null; // strip decimal place
-		$weather['imgCode']		= !empty($xml->icon_url_name) ? (string)$xml->icon_url_name : null;
-		
-		// Convert NOAA's weather icon names.
-		list($weather_img_name, $ext) = explode('.', $weather['imgCode']);
-		$converted_status = convert_weather_status($weather_img_name);
-		
-		$weather['imgCode'] = $converted_status['weather_code'];
-		$weather['condition'] = $converted_status['weather_condition'];
+		switch ($forecast_type) {
+			case 'forecast':
+				// Loop through each day of the week; set values
+				for ($i = 0; $i < 7; $i++) {
+					$daycount = $i + 1;
+					$day = 'day'.$daycount;
 
-		// We assume the fetch was a success unless the
-		// temp or imgCode are empty.
-		
-		// Catch missing temp
-		if (!isset($weather['temp']) || !$weather['temp']) {
-			$weather['temp'] = '80&#186;';
-			$weather['successfulFetch'] = 'no';
-		}
-		
-		// Catch missing imgCode (cid)
-		if (!isset($weather['imgCode']) || !intval($weather['imgCode'])) {
-			$weather['imgCode'] = '34';
-			$weather['successfulFetch'] = 'no';
+					// Set date
+					$datetime = $xml->data->{'time-layout'}->{'start-valid-time'}[$i];
+					$weather[$day]['date'] = date('Y-m-d', strtotime($datetime));
+
+					// Set max temp
+					$temp_max = $xml->data->parameters->temperature[0]->value[$i];
+					$weather[$day]['tempMax'] = preg_match('/[0-9]+/', $temp_max) ? $temp_max.'&#186;' : null;
+
+					// Set min temp
+					$temp_min = $xml->data->parameters->temperature[1]->value[$i];
+					$weather[$day]['tempMin'] = preg_match('/[0-9]+/', $temp_min) ? $temp_min.'&#186;' : null;
+
+					// Convert NOAA's weather icon names
+					$weather[$day]['imgCode'] = !empty($xml->data->parameters->{'conditions-icon'}->{'icon-link'}[$i]) ? $xml->data->parameters->{'conditions-icon'}->{'icon-link'}[$i] : null;
+					if ($weather[$day]['imgCode'] !== null) {
+						$filename = substr(strrchr($weather[$day]['imgCode'], '/'), 1); // Split img url at last forward slash
+						list($weather_img_name, $ext) = explode('.', $filename); // Remove .jpg/.png/whatever extension from remaining string
+						$weather_img_name = preg_replace('/[0-9]+/', '', $weather_img_name); // Strip precipitation chance # from code, if exists
+
+						$converted_status = convert_weather_status($weather_img_name);
+						$weather[$day]['imgCode'] = $converted_status['weather_code'];
+						$weather[$day]['condition'] = $converted_status['weather_condition'];
+					}
+
+					// We assume the fetch was a success unless the
+					// imgCode for a given day is empty.
+
+					// Catch missing imgCode (cid)
+					if (!isset($weather[$day]['imgCode']) || !intval($weather[$day]['imgCode'])) {
+						$weather[$day]['imgCode'] = 34;
+						$weather['successfulFetch'] = 'no';
+					}
+
+					// Set image icons
+					$weather[$day]['imgSmall']  = SITE_URL.'img/weather-small/'.$weather[$day]['imgCode'].'.png';
+					$weather[$day]['imgMedium'] = SITE_URL.'img/weather-medium/'.$weather[$day]['imgCode'].'.png';
+					$weather[$day]['imgLarge']  = SITE_URL.'img/weather-large/WC'.$weather[$day]['imgCode'].'.png';	
+				}
+
+				// Set other data
+				$weather['provider'] 	  = (string)$xml->head->source->credit;
+				$weather['feedUpdatedAt'] = date('r', strtotime((string)$xml->head->product->{'creation-date'}));
+
+				break;				
+			case 'current':
+			default:
+				// Make sure we get actual usable values before assigning them
+				$weather['temp'] = preg_match('/[0-9]+/', $xml->temp_f) ? number_format((string)$xml->temp_f).'&#186;' : null; // strip decimal place
+				$weather['imgCode'] = !empty($xml->icon_url_name) ? (string)$xml->icon_url_name : null;
+				
+				// Convert NOAA's weather icon names.
+				if ($weather['imgCode'] !== null) {
+					list($weather_img_name, $ext) = explode('.', $weather['imgCode']);
+
+					$converted_status = convert_weather_status($weather_img_name);
+					$weather['imgCode'] = $converted_status['weather_code'];
+					$weather['condition'] = $converted_status['weather_condition'];
+				}
+
+				// We assume the fetch was a success unless the
+				// temp or imgCode are empty.
+				
+				// Catch missing temp
+				if (!isset($weather['temp']) || !$weather['temp']) {
+					$weather['temp'] = '80&#186;';
+					$weather['successfulFetch'] = 'no';
+				}
+				
+				// Catch missing imgCode (cid)
+				if (!isset($weather['imgCode']) || !intval($weather['imgCode'])) {
+					$weather['imgCode'] = 34;
+					$weather['successfulFetch'] = 'no';
+				}
+				
+				// Set image location URLs, other data
+				$weather['imgSmall']  	  = SITE_URL.'img/weather-small/'.$weather['imgCode'].'.png';
+				$weather['imgMedium'] 	  = SITE_URL.'img/weather-medium/'.$weather['imgCode'].'.png';
+				$weather['imgLarge']  	  = SITE_URL.'img/weather-large/WC'.$weather['imgCode'].'.png';
+				$weather['provider']  	  = (string)$xml->credit_URL;
+				$weather['feedUpdatedAt'] = (string)$xml->observation_time_rfc822;
+				$weather['date'] 	  	  = date('Y-m-d', strtotime($weather['feedUpdatedAt']));
+
+				break;
 		}
 		
 		// Set other data
-		$weather['provider'] 		= (string)$xml->credit_URL;
-		$weather['imgSmall']		= SITE_URL.'img/weather-small/'.$weather['imgCode'].'.png';
-		$weather['imgMedium']		= SITE_URL.'img/weather-medium/'.$weather['imgCode'].'.png';
-		$weather['imgLarge']		= SITE_URL.'img/weather-large/WC'.$weather['imgCode'].'.png';
-		$weather['cachedAt']		= date('r');
-		$weather['feedUpdatedAt'] 	= (string)$xml->observation_time_rfc822;
+		$weather['cachedAt'] = date('r');
 	}
 	else {
 		$weather['successfulFetch'] = 'no';
@@ -293,14 +381,17 @@ function convert_weather_status($weather_img_name) {
 			$weather_code = 21; // Haze
 			$weather_condition = 'Haze';
 			break;					
+		default:
+			$weather_code = 34; // Fallback
+			$weather_condition = 'Fair';
+			break;
 	}
 	return array('weather_code' => $weather_code, 'weather_condition' => $weather_condition);
 }
 
 
-// This output can be updated later to output results based
-// on GET params (current, forecast...)
+// Display weather data
 header('Content-Type: application/json');
-print get_weather_data('current');
+print get_weather_data(REQUESTED_DATA);
 
 ?>
