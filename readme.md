@@ -27,7 +27,8 @@ is saved to the cache anyway so that empty JSON is never returned.
 The URL of the weather data provider.
 
 ### condition (string)
-A weather condition phrase. (See http://w1.weather.gov/xml/current_obs/weather.php)
+A weather condition phrase.  These phrases are based loosely on the Yahoo Weather API code descriptions: 
+(http://developer.yahoo.com/weather/#codetable)
 
 ### imgCode (int)
 A status condition code, based on the status code provided by NOAA.  This code is translated
