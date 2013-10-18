@@ -16,6 +16,15 @@ on ucf.edu; `img/weather-medium/` contains icons used in the GMUCF emails; `img/
 contains icons used on UCF Today.
 
 
+## Usage
+The Orlando area's current conditions feed is returned by default when index.php is requested. 
+Use the GET parameter `data` to return different sets of data:
+
+* ?data=current, default: Current Conditions
+* ?data=forecastToday: Forecast for today; includes conditions/temperatures for today and tonight
+* ?data=forecastExtended: 7 day forecast, divided into days ('days', grouped into 'day1-7')
+
+
 ## Current Conditions & Forecast Returned Values
 
 ### successfulFetch (string--previously 'successfulCache' in v1.0.0)
@@ -49,20 +58,29 @@ The timestamp when this set of weather data was last cached.
 The timestamp when the feed provider (NOAA) last updated their feed content.
 
 
-## Current Conditions Returned Values
+## Current Conditions, Today's Forecast Returned Values
 
 ### temp (string)
 Current temperature reading. (Includes degree symbol)
 
+### tempN (int)
+Current temperature reading. (Does not include degree symbol)
 
-## Forecast Returned Values (per 'day')
+
+## Extended Forecast Returned Values (per 'day')
 
 ### tempMax (string)
 Maximum predicted temperature for that day. (Includes degree symbol)
 
+## tempMaxN (int)
+Maximum predicted temperature for that day. (Does not include degree symbol)
+
 ### tempMin (string)
 Minimum predicted temperature for that day. (Includes degree symbol.)  Note that a 'day7' tempMin 
 is not provided by NOAA.
+
+### tempMinN (int)
+Minimum predicted temperature for that day. (Does not include degree symbol.)
 
 
 ## Notes
