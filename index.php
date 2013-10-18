@@ -87,6 +87,7 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 			$time_template = array(
 				'condition'	=> 'Fair', 		// Fallback
 				'temp'		=> '80&#186;',	// Fallback
+				'tempN'		=> 80,			// Fallback
 				'imgCode'	=> 34,			// Fallback
 				'imgSmall'	=> '',
 				'imgMedium'	=> '',
@@ -104,7 +105,9 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 				'date'		=> '',
 				'condition'	=> 'Fair', 		// Fallback
 				'tempMax'	=> '80&#186;',	// Fallback
+				'tempMaxN'	=> 80,			// Fallback
 				'tempMin'	=> '80&#186;',	// Fallback
+				'tempMinN'	=> 80,
 				'imgCode'	=> 34,			// Fallback
 				'imgSmall'	=> '',
 				'imgMedium'	=> '',
@@ -127,9 +130,10 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 			$weather_url = WEATHER_URL_CURRENT;
 			$weather = array_merge($weather_template, array(
 				'date'		=> '',
-				'condition'	=> 'Fair', 	 // Fallback
+				'condition'	=> 'Fair', 	   // Fallback
 				'temp'		=> '80&#186;', // Fallback
-				'imgCode'	=> 34,		 // Fallback
+				'tempN'		=> 80,		   // Fallback
+				'imgCode'	=> 34,		   // Fallback
 				'imgSmall'	=> '',
 				'imgMedium'	=> '',
 				'imgLarge'	=> '',
@@ -155,11 +159,15 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 
 				// Set today temp
 				$temp_max = $xml->data->parameters->temperature[0]->value[0];
-				$weather['today']['temp'] = preg_match('/[0-9]+/', $temp_max) ? $temp_max.'&#186;' : null;
+				$temp_max = preg_match('/[0-9]+/', $temp_max) ? (int)$temp_max : null;
+				$weather['today']['tempN'] = $temp_max;
+				$weather['today']['temp'] = $temp_max !== null ? $temp_max.'&#186;' : null;
 
 				// Set tonight temp
 				$temp_min = $xml->data->parameters->temperature[1]->value[0];
-				$weather['tonight']['temp'] = preg_match('/[0-9]+/', $temp_min) ? $temp_min.'&#186;' : null;
+				$temp_min = preg_match('/[0-9]+/', $temp_min) ? (int)$temp_min : null;
+				$weather['tonight']['tempN'] = $temp_min;
+				$weather['tonight']['temp'] = $temp_min !== null ? $temp_min.'&#186;' : null;
 
 				// Convert NOAA's weather icon names
 				$weather['today']['imgCode'] = !empty($xml->data->parameters->{'conditions-icon'}->{'icon-link'}[0]) ? $xml->data->parameters->{'conditions-icon'}->{'icon-link'}[0] : null;
@@ -215,11 +223,15 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 
 					// Set max temp
 					$temp_max = $xml->data->parameters->temperature[0]->value[$i];
-					$weather['days'][$day]['tempMax'] = preg_match('/[0-9]+/', $temp_max) ? $temp_max.'&#186;' : null;
+					$temp_max = preg_match('/[0-9]+/', $temp_max) ? (int)$temp_max : null;
+					$weather['days'][$day]['tempMaxN'] = $temp_max;
+					$weather['days'][$day]['tempMax'] = $temp_max !== null ? $temp_max.'&#186;' : null;
 
 					// Set min temp
 					$temp_min = $xml->data->parameters->temperature[1]->value[$i];
-					$weather['days'][$day]['tempMin'] = preg_match('/[0-9]+/', $temp_min) ? $temp_min.'&#186;' : null;
+					$temp_min = preg_match('/[0-9]+/', $temp_min) ? (int)$temp_min : null;
+					$weather['days'][$day]['tempMinN'] = $temp_min;
+					$weather['days'][$day]['tempMin'] = $temp_min !== null ? $temp_min.'&#186;' : null;
 
 					// Convert NOAA's weather icon names
 					$weather['days'][$day]['imgCode'] = !empty($xml->data->parameters->{'conditions-icon'}->{'icon-link'}[$i]) ? $xml->data->parameters->{'conditions-icon'}->{'icon-link'}[$i] : null;
@@ -253,7 +265,9 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 			case 'current':
 			default:
 				// Make sure we get actual usable values before assigning them
-				$weather['temp'] = preg_match('/[0-9]+/', $xml->temp_f) ? number_format((string)$xml->temp_f).'&#186;' : null; // strip decimal place
+				$temp = preg_match('/[0-9]+/', $xml->temp_f) ? (int)number_format((string)$xml->temp_f) : null; // strip decimal place
+				$weather['temp'] = $temp;
+				$weather['tempN'] = $temp !== null ? $temp.'&#186;' : null;
 				$weather['imgCode'] = !empty($xml->icon_url_name) ? (string)$xml->icon_url_name : null;
 				
 				// Convert NOAA's weather icon names.
@@ -270,6 +284,7 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 				// Catch missing temp
 				if (!isset($weather['temp']) || !$weather['temp']) {
 					$weather['temp'] = '80&#186;';
+					$weather['tempN'] = 80;
 					$weather['successfulFetch'] = 'no';
 				}
 				
