@@ -25,7 +25,7 @@ Use the GET parameter `data` to return different sets of data:
 * ?data=forecastExtended: 7 day forecast, divided into days ('days', grouped into 'day1-7')
 
 
-## Current Conditions & Forecast Returned Values
+## Current Conditions & Forecasts Returned Values
 
 ### successfulFetch (string--previously 'successfulCache' in v1.0.0)
 Either 'yes' or 'no'; if the requested data was successfully fetched from the specified external source,
@@ -72,7 +72,7 @@ Current temperature reading. (Does not include degree symbol)
 ### tempMax (string)
 Maximum predicted temperature for that day. (Includes degree symbol)
 
-## tempMaxN (int)
+### tempMaxN (int)
 Maximum predicted temperature for that day. (Does not include degree symbol)
 
 ### tempMin (string)
