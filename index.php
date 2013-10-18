@@ -266,8 +266,8 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 			default:
 				// Make sure we get actual usable values before assigning them
 				$temp = preg_match('/[0-9]+/', $xml->temp_f) ? (int)number_format((string)$xml->temp_f) : null; // strip decimal place
-				$weather['temp'] = $temp;
-				$weather['tempN'] = $temp !== null ? $temp.'&#186;' : null;
+				$weather['tempN'] = $temp;
+				$weather['temp'] = $temp !== null ? $temp.'&#186;' : null;
 				$weather['imgCode'] = !empty($xml->icon_url_name) ? (string)$xml->icon_url_name : null;
 				
 				// Convert NOAA's weather icon names.
