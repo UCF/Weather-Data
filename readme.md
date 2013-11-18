@@ -22,15 +22,15 @@ Use the GET parameter `data` to return different sets of data:
 
 * ?data=current, default: Current Conditions
 * ?data=forecastToday: Forecast for today; includes conditions/temperatures for today and tonight
-* ?data=forecastExtended: 7 day forecast, divided into days ('days', grouped into 'day1-7')
+* ?data=forecastExtended: 5 day forecast, divided into days ('days', grouped into 'day1-5')
 
 
 ## Current Conditions & Forecasts Returned Values
 
 ### successfulFetch (string--previously 'successfulCache' in v1.0.0)
 Either 'yes' or 'no'; if the requested data was successfully fetched from the specified external source,
-this value is set to 'yes'. If the value is ever 'no', a basic set of fallback weather data or stale data 
-is saved to the cache anyway so that empty JSON is never returned.
+this value is set to 'yes'. If some particular content is missing from the external source for any day, 
+this value is set to 'no'.
 
 ### provider (string)
 The URL of the weather data provider.
@@ -84,15 +84,14 @@ Minimum predicted temperature for that day. (Does not include degree symbol.)
 
 
 ## Notes
-* Sites using this service are expected to cache results on their end and should cache the returned 
-JSON data regardless of the successfulCache value.  Data should only be requested from this script at 
-a set interval.
-* A minimum set of fallback values are set regardless of the successfulCache value to 
-prevent empty results from being returned.  Re-requesting this script will not refresh an unsuccessful 
-cache unless it has expired.
+* Sites using this service are expected to cache results on their end.  Data should only be requested 
+from this script at a set interval.  Re-requesting this service will not trigger a fetch of new 
+content unless the defined cache period has passed.
+* Sites using this service should check for legitimate data values before displaying feed data to the
+user.  Even if the 'successfulFetch' value is set to 'no', partial data may still be returned.  
+Default fallback values have been removed as of v1.1.3.
 * The cache is only refreshed with new data when the old cached data has expired, AND a newly-grabbed 
-set of data was grabbed successfully.  This script will continue to display stale data until a 
-successful data fetch is performed.  If no stale data is available to fall back to, a basic set of
-fallback condition data is cached until the next expiration.
+set of data was grabbed successfully.  This script will continue to display good stale data until 
+another successful data fetch is performed, as long as that stale data was retrieved within the same day.
 * Note that the NOAA only refreshes their current condition data once an hour, at (roughly) 45 
 minutes past the hour.  The weather grabber script is set to cache data for 15 minutes.
