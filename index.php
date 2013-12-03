@@ -11,7 +11,7 @@ define('WEATHER_URL_CURRENT', 'http://w1.weather.gov/xml/current_obs/KORL.xml');
 define('WEATHER_URL_FORECAST_TODAY', 'http://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php?lat=28.5898683&lon=-81.1802619&format=12+hourly&numDays=1');
 define('WEATHER_URL_FORECAST_EXTENDED', 'http://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php?lat=28.5898683&lon=-81.1802619&format=24+hourly&numDays=7');
 
-define('WEATHER_URL_TIMEOUT', 6);			// seconds
+define('WEATHER_URL_TIMEOUT', 30);			// seconds... NOAA can be slow.
 define('WEATHER_CACHE_DURATION', 60 * 15); 	// seconds (15 minutes)
 
 if (isset($_GET['data']) && $_GET['data'] == 'forecastToday') {
@@ -404,7 +404,8 @@ function convert_weather_status($weather_img_name) {
 			break;
 		case 'fg':
 		case 'nfg':
-			$weather_code = 20; // Foggy
+		case 'nbknfg':
+			$weather_code = 20; // Foggy/Patchy Fog (day, night)
 			$weather_condition = 'Foggy';
 			break;
 		case 'smoke':
