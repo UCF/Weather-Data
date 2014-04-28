@@ -366,14 +366,17 @@ function get_noaa_img_code($url) {
 function convert_weather_status($weather_img_name) {
 	switch ($weather_img_name) {
 		case 'bkn':
+		case 'hi_bkn':
 			$weather_code = 28; // Mostly Cloudy
 			$weather_condition = 'Mostly cloudy';
 			break;
 		case 'nbkn':
+		case 'hi_nbkn':
 			$weather_code = 27; // Mostly Cloudy (night)
 			$weather_condition = 'Mostly cloudy';
 			break;
 		case 'skc':
+		case 'hi_skc':
 			$weather_code = 32; // Fair, Clear
 			$weather_condition = 'Fair';
 			break;
@@ -382,23 +385,33 @@ function convert_weather_status($weather_img_name) {
 			$weather_condition = 'Fair';
 			break;
 		case 'few':
+		case 'hi_few':
 			$weather_code = 34; // Few Clouds
 			$weather_condition = 'Fair';
 			break;
 		case 'nfew':
+		case 'hi_nfew':
 			$weather_code = 29; // Few Clouds (night)
 			$weather_condition = 'Fair';
 			break;
 		case 'sct':
+		case 'hi_sct':
+		case 'pcloudy':
 			$weather_code = 30; // Partly Cloudy
 			$weather_condition = 'Partly cloudy';
 			break;
 		case 'nsct':
+		case 'hi_nsct':
 			$weather_code = 27; // Partly Cloudy (night)
 			$weather_condition = 'Partly cloudy';
 			break;
+		case 'nscttsra':
+			$weather_code = 47; // Scattered thundershowers (night)
+			$weather_condition = 'Scattered thundershowers';
+			break;
 		case 'ovc':
 		case 'novc':
+		case 'tcu': // ??
 			$weather_code = 26; // Overcast (day, night)
 			$weather_condition = 'Overcast';
 			break;
@@ -409,6 +422,7 @@ function convert_weather_status($weather_img_name) {
 			$weather_condition = 'Foggy';
 			break;
 		case 'smoke':
+		case 'fu':
 			$weather_code = 22; // Smoke
 			$weather_condition = 'Smoke';
 			break;
@@ -426,6 +440,7 @@ function convert_weather_status($weather_img_name) {
 			$weather_condition = 'Mixed snow/sleet';
 			break;	
 		case 'raip':
+		case 'nraip':
 			$weather_code = 35; // Mixed rain and hail
 			$weather_condition = 'Mixed rain/hail';
 			break;	
@@ -441,9 +456,13 @@ function convert_weather_status($weather_img_name) {
 		case 'tsra':
 			$weather_code = 3;  // Severe Thunderstorms
 			$weather_condition = 'Severe thunderstorms';
-			break;	
-		case 'ntrsa':
-		case 'hi_ntrsa':
+			break;
+		case 'scttsra':
+			$weather_code = 37; // Isolated Thunderstorms/Chance of Thunderstorm
+			$weather_condition = 'Isolated thunderstorms';
+			break;
+		case 'ntsra':
+		case 'hi_ntsra':
 			$weather_code = 47; // Thunderstorms, Thunderstorm in vicinity (night)
 			$weather_condition = 'Isolated thundershowers';
 			break;
@@ -490,13 +509,27 @@ function convert_weather_status($weather_img_name) {
 			$weather_condition = 'Showers';
 			break;	
 		case 'dust':
+		case 'du':
 			$weather_code = 19; // Dust
 			$weather_condition = 'Dust';
 			break;
 		case 'mist':
 			$weather_code = 21; // Haze
 			$weather_condition = 'Haze';
-			break;					
+			break;
+		case 'hot':
+			$weather_code = 36; // Hot
+			$weather_condition = 'Hot';
+			break;
+		case 'cold':
+		case 'br': // ??
+			$weather_code = 25; // Cold
+			$weather_condition = 'Cold';
+			break;
+		case 'blizzard':
+			$weather_code = 15; // Blizzard/Blowing Snow
+			$weather_condition = 'Blowing Snow';
+			break;
 		default:
 			$weather_code = null; // No match found
 			$weather_condition = null;
