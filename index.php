@@ -11,8 +11,13 @@ define('WEATHER_URL_CURRENT', 'http://w1.weather.gov/xml/current_obs/KORL.xml');
 define('WEATHER_URL_FORECAST_TODAY', 'http://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php?lat=28.5898683&lon=-81.1802619&format=12+hourly&numDays=1');
 define('WEATHER_URL_FORECAST_EXTENDED', 'http://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php?lat=28.5898683&lon=-81.1802619&format=24+hourly&numDays=7');
 
-define('WEATHER_URL_TIMEOUT', 30);			// seconds... NOAA can be slow.
-define('WEATHER_CACHE_DURATION', 60 * 15); 	// seconds (15 minutes)
+define('WEATHER_URL_TIMEOUT', 30);          // seconds... NOAA can be slow.
+define('WEATHER_CACHE_DURATION', 60 * 15);  // seconds (15 minutes)
+
+define('WEATHER_TIMEZONE', 'America/New_York'); // PHP timezone identifier *REQUIRED*. See http://php.net/manual/en/timezones.php
+
+
+date_default_timezone_set(WEATHER_TIMEZONE);
 
 if (isset($_GET['data']) && $_GET['data'] == 'forecastToday') {
 	define('REQUESTED_DATA', 'forecastToday');
@@ -31,7 +36,7 @@ else {
  *
  * @return obj
  **/
-function get_weather_data($forecast_type='current') {	
+function get_weather_data($forecast_type='current') {
 	switch ($forecast_type) {
 		case 'forecastToday':
 			$cache_data_path = CACHEDATA_FORECAST_TODAY;
@@ -48,7 +53,7 @@ function get_weather_data($forecast_type='current') {
 	// Check if cached weather data already exists
 	$cache_data_contents = @file_get_contents($cache_data_path);
 
-	// The cache time must be within now and the cache duration 
+	// The cache time must be within now and the cache duration
 	// to return cached data.
 	// Note that we will still return cached data with make_new_cachedata()
 	// if our most recently grabbed data is bad and we have existing
@@ -146,7 +151,7 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 			));
 			break;
 	}
-	
+
 	// Set a timeout and try to grab the weather feed
 	$opts = array('http' => array(
 							'method' => 'GET',
@@ -154,7 +159,7 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 							));
 	$context = stream_context_create($opts);
 	$raw_weather = @file_get_contents($weather_url, false, $context);
-	
+
 	if ($raw_weather) {
 		$xml = simplexml_load_string($raw_weather);
 		if ($xml) {
@@ -269,7 +274,7 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 					$weather['provider'] 	  = (string)@$xml->head->source->credit;
 					$weather['feedUpdatedAt'] = date('r', strtotime((string)@$xml->head->product->{'creation-date'}));
 
-					break;				
+					break;
 				case 'current':
 				default:
 					// Make sure we get actual usable values before assigning them
@@ -277,7 +282,7 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 					$weather['tempN'] = $temp;
 					$weather['temp'] = $temp !== null ? $temp.'&#186;' : null;
 					$weather['imgCode'] = !empty($xml->icon_url_name) ? (string)$xml->icon_url_name : null;
-					
+
 					// Convert NOAA's weather icon names.
 					if ($weather['imgCode'] !== null) {
 						list($weather_img_name, $ext) = explode('.', $weather['imgCode']);
@@ -291,7 +296,7 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 					if (!isset($weather['temp']) || !$weather['temp'] || !isset($weather['imgCode']) || !intval($weather['imgCode'])) {
 						$weather['successfulFetch'] = 'no';
 					}
-					
+
 					// Set image location URLs, other data
 					if (isset($weather['imgCode']) || intval($weather['imgCode'])) {
 						$weather['imgSmall']  	  = SITE_URL.'img/weather-small/'.$weather['imgCode'].'.png';
@@ -318,9 +323,9 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 
 	// Figure out whether or not we need to save newly-grabbed data.
 	if (
-		($weather['successfulFetch'] == 'no') && 
-		($old_cache_data !== null) && 
-		($old_cache_data->successfulFetch == 'yes') && 
+		($weather['successfulFetch'] == 'no') &&
+		($old_cache_data !== null) &&
+		($old_cache_data->successfulFetch == 'yes') &&
 		(date('Ymd') == date('Ymd', strtotime($old_cache_data->cachedAt)))
 	) {
 		// Our most recent fetch returned bad data, and we have good old data that was
@@ -336,7 +341,7 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 		fwrite($filehandle, $json);
 		fclose($filehandle);
 	}
-	
+
 	// Finally, return the newly-grabbed content:
 	return $json;
 }
@@ -438,17 +443,17 @@ function convert_weather_status($weather_img_name) {
 		case 'nmix':
 			$weather_code = 7;  // Mixed snow and sleet (day, night)
 			$weather_condition = 'Mixed snow/sleet';
-			break;	
+			break;
 		case 'raip':
 		case 'nraip':
 			$weather_code = 35; // Mixed rain and hail
 			$weather_condition = 'Mixed rain/hail';
-			break;	
+			break;
 		case 'rasn':
 		case 'nrasn':
 			$weather_code = 6;  // Mixed rain and sleet
 			$weather_condition = 'Mixed rain/sleet';
-			break;	
+			break;
 		case 'shra':
 			$weather_code = 11; // Light Showers
 			$weather_condition = 'Showers';
@@ -469,7 +474,7 @@ function convert_weather_status($weather_img_name) {
 		case 'sn':
 			$weather_code = 16; // Snow
 			$weather_condition = 'Snow';
-			break;	
+			break;
 		case 'nsn':
 			$weather_code = 46; // Snow (night)
 			$weather_condition = 'Snow';
@@ -495,11 +500,11 @@ function convert_weather_status($weather_img_name) {
 		case 'fzrara':
 			$weather_code = 10; // Freezing Rain
 			$weather_condition = 'Freezing rain';
-			break;	
+			break;
 		case 'hi_tsra':
 			$weather_code = 38; // Thunderstorm in vicinity (day)
 			$weather_condition = 'Scattered thunderstorms';
-			break;	
+			break;
 		case 'ra1':
 			$weather_code = 9;  // Drizzle
 			$weather_condition = 'Drizzle';
@@ -507,7 +512,7 @@ function convert_weather_status($weather_img_name) {
 		case 'ra':
 			$weather_code = 12; // Showers
 			$weather_condition = 'Showers';
-			break;	
+			break;
 		case 'dust':
 		case 'du':
 			$weather_code = 19; // Dust
