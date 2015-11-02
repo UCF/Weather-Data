@@ -153,10 +153,16 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 	}
 
 	// Set a timeout and try to grab the weather feed
-	$opts = array('http' => array(
-							'method' => 'GET',
-							'timeout' => WEATHER_URL_TIMEOUT
-							));
+	$headers = "Cache-Control: no-cache, max-age=0, must-revalidate\r\n" .
+				"Connection: close\r\n" .
+				"User-agent: UCF-Weather-Data\r\n";
+	$opts = array(
+		'http' => array(
+			'method' => 'GET',
+			'timeout' => WEATHER_URL_TIMEOUT,
+			'protocol_version' => 1.1,
+			'header' => $headers
+	) );
 	$context = stream_context_create($opts);
 	$raw_weather = @file_get_contents($weather_url, false, $context);
 
