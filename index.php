@@ -1,5 +1,5 @@
 <?php
-define('SITE_URL', 'http://'.$_SERVER['SERVER_NAME'].(str_replace('?'.$_SERVER['QUERY_STRING'], '', $_SERVER['REQUEST_URI'])));
+define('SITE_URL', 'https://'.$_SERVER['SERVER_NAME'].(str_replace('?'.$_SERVER['QUERY_STRING'], '', $_SERVER['REQUEST_URI'])));
 define('SITE_PATH', dirname(__FILE__).'/');
 
 define('CACHEDATA_PATH', SITE_PATH.'data/');
