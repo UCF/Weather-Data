@@ -94,3 +94,6 @@ set of data was grabbed successfully.  This script will continue to display good
 another successful data fetch is performed, as long as that stale data was retrieved within the same day.
 * Note that the NOAA only refreshes their current condition data once an hour, at (roughly) 45
 minutes past the hour.  The weather grabber script is set to cache data for 15 minutes.
+* As of v1.1.9, this project utilizes cURL to fetch NOAA data.  Environments running this project must
+have libcurl installed to support PHP's cURL functionality.  See
+[PHP's documentation on cURL](https://www.php.net/manual/en/intro.curl.php) for more information.

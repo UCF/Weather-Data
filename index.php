@@ -54,7 +54,7 @@ function fetch_external_contents( $url, $curl_args=array() ) {
 	$curl_args = ( empty( $curl_args ) ) ? $curl_defaults : array_merge( $curl_defaults, $curl_args );
 
 	$ch        = curl_init( $url );
-    curl_setopt_array( $ch, $curl_args );
+	curl_setopt_array( $ch, $curl_args );
 	$retval    = curl_exec( $ch );
 	$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 	$error     = curl_errno( $ch );
@@ -77,11 +77,11 @@ function fetch_external_contents( $url, $curl_args=array() ) {
  */
 function fetch_file_contents( $location ) {
 	if ( is_file( $location ) ) {
-        ob_start();
+		ob_start();
 		include $location;
 		return trim( ob_get_clean() );
-    }
-    return false;
+	}
+	return false;
 }
 
 
