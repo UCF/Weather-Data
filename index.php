@@ -7,9 +7,9 @@ define('CACHEDATA_CURRENT', CACHEDATA_PATH.'data-current.json');
 define('CACHEDATA_FORECAST_TODAY', CACHEDATA_PATH.'data-forecast-today.json');
 define('CACHEDATA_FORECAST_EXTENDED', CACHEDATA_PATH.'data-forecast-extended.json');
 
-define('WEATHER_URL_CURRENT', 'http://w1.weather.gov/xml/current_obs/KORL.xml');
-define('WEATHER_URL_FORECAST_TODAY', 'http://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php?lat=28.5898683&lon=-81.1802619&format=12+hourly&numDays=1');
-define('WEATHER_URL_FORECAST_EXTENDED', 'http://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php?lat=28.5898683&lon=-81.1802619&format=24+hourly&numDays=7');
+define('WEATHER_URL_CURRENT', 'https://w1.weather.gov/xml/current_obs/KORL.xml');
+define('WEATHER_URL_FORECAST_TODAY', 'https://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php?lat=28.5898683&lon=-81.1802619&format=12+hourly&numDays=1');
+define('WEATHER_URL_FORECAST_EXTENDED', 'https://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php?lat=28.5898683&lon=-81.1802619&format=24+hourly&numDays=7');
 
 define('WEATHER_URL_TIMEOUT', 30);          // seconds... NOAA can be slow.
 define('WEATHER_CACHE_DURATION', 60 * 15);  // seconds (15 minutes)
@@ -27,6 +27,61 @@ elseif (isset($_GET['data']) && $_GET['data'] == 'forecastExtended') {
 }
 else {
 	define('REQUESTED_DATA', 'current');
+}
+
+
+/**
+ * Given a URL, returns the contents of that location as a string.
+ *
+ * @since 1.1.9
+ * @param string $url URL to request + return data from
+ * @param array $curl_args Custom arguments to pass to cURL request
+ * @return mixed External contents as a string, or false on failure
+ */
+function fetch_external_contents( $url, $curl_args=array() ) {
+	$curl_defaults = array(
+		CURLOPT_RETURNTRANSFER => true, // actually return the external contents instead of a success/failure boolean
+		CURLOPT_FOLLOWLOCATION => true, // follow redirects
+		CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1, // use HTTP 1.1
+		CURLOPT_CONNECTTIMEOUT => WEATHER_URL_TIMEOUT, // set a timeout
+		CURLOPT_HTTPHEADER     => array(
+			'Cache-Control: no-cache, max-age=0, must-revalidate',
+			'Connection: close',
+			'User-agent: UCF-Weather-Data'
+		)
+	);
+
+	$curl_args = ( empty( $curl_args ) ) ? $curl_defaults : array_merge( $curl_defaults, $curl_args );
+
+	$ch        = curl_init( $url );
+	curl_setopt_array( $ch, $curl_args );
+	$retval    = curl_exec( $ch );
+	$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+	$error     = curl_errno( $ch );
+	curl_close( $ch );
+
+	if ( $error > 0 || $http_code >= 400 ) {
+		$retval = false;
+	}
+
+	return $retval;
+}
+
+
+/**
+ * Given a file path, returns the contents of that file as a string.
+ *
+ * @since 1.1.9
+ * @param string $location File path
+ * @return mixed File contents string, or false on failure
+ */
+function fetch_file_contents( $location ) {
+	if ( is_file( $location ) ) {
+		ob_start();
+		include $location;
+		return trim( ob_get_clean() );
+	}
+	return false;
 }
 
 
@@ -51,7 +106,7 @@ function get_weather_data($forecast_type='current') {
 	}
 
 	// Check if cached weather data already exists
-	$cache_data_contents = @file_get_contents($cache_data_path);
+	$cache_data_contents = fetch_file_contents($cache_data_path);
 
 	// The cache time must be within now and the cache duration
 	// to return cached data.
@@ -152,19 +207,8 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 			break;
 	}
 
-	// Set a timeout and try to grab the weather feed
-	$headers = "Cache-Control: no-cache, max-age=0, must-revalidate\r\n" .
-				"Connection: close\r\n" .
-				"User-agent: UCF-Weather-Data\r\n";
-	$opts = array(
-		'http' => array(
-			'method' => 'GET',
-			'timeout' => WEATHER_URL_TIMEOUT,
-			'protocol_version' => 1.1,
-			'header' => $headers
-	) );
-	$context = stream_context_create($opts);
-	$raw_weather = @file_get_contents($weather_url, false, $context);
+	// Try to grab the weather feed
+	$raw_weather = fetch_external_contents($weather_url);
 
 	if ($raw_weather) {
 		$xml = simplexml_load_string($raw_weather);
