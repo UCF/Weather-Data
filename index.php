@@ -7,7 +7,7 @@ define('CACHEDATA_CURRENT', CACHEDATA_PATH.'data-current.json');
 define('CACHEDATA_FORECAST_TODAY', CACHEDATA_PATH.'data-forecast-today.json');
 define('CACHEDATA_FORECAST_EXTENDED', CACHEDATA_PATH.'data-forecast-extended.json');
 
-define('WEATHER_URL_CURRENT', 'https://w1.weather.gov/xml/current_obs/KORL.xml');
+define('WEATHER_URL_CURRENT', 'https://api.weather.gov/stations/KORL/observations/latest');
 define('WEATHER_URL_FORECAST_TODAY', 'https://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php?lat=28.5898683&lon=-81.1802619&format=12+hourly&numDays=1');
 define('WEATHER_URL_FORECAST_EXTENDED', 'https://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php?lat=28.5898683&lon=-81.1802619&format=24+hourly&numDays=7');
 
@@ -38,13 +38,14 @@ else {
  * @param array $curl_args Custom arguments to pass to cURL request
  * @return mixed External contents as a string, or false on failure
  */
-function fetch_external_contents( $url, $curl_args=array() ) {
+function fetch_external_contents( $url, $curl_args=array(), $content_type='$application/vnd.noaa.obs+xml' ) {
 	$curl_defaults = array(
 		CURLOPT_RETURNTRANSFER => true, // actually return the external contents instead of a success/failure boolean
 		CURLOPT_FOLLOWLOCATION => true, // follow redirects
 		CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1, // use HTTP 1.1
 		CURLOPT_CONNECTTIMEOUT => WEATHER_URL_TIMEOUT, // set a timeout
 		CURLOPT_HTTPHEADER     => array(
+			"Accept: $content_type",
 			'Cache-Control: no-cache, max-age=0, must-revalidate',
 			'Connection: close',
 			'User-agent: UCF-Weather-Data'
@@ -151,6 +152,7 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 	);
 	switch ($forecast_type) {
 		case 'forecastToday':
+			$content_type = 'application/vnd.noaa.obs+xml';
 			$weather_url = WEATHER_URL_FORECAST_TODAY;
 			$time_template = array(
 				'condition'	=> '',
@@ -168,6 +170,7 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 			));
 			break;
 		case 'forecastExtended':
+			$content_type = 'application/vnd.noaa.obs+xml';
 			$weather_url = WEATHER_URL_FORECAST_EXTENDED;
 			$date_template = array(
 				'date'		=> '',
@@ -193,6 +196,7 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 			break;
 		case 'current':
 		default:
+			$content_type = 'application/ld+json';
 			$weather_url = WEATHER_URL_CURRENT;
 			$weather = array_merge($weather_template, array(
 				'date'		=> '',
@@ -208,10 +212,15 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 	}
 
 	// Try to grab the weather feed
-	$raw_weather = fetch_external_contents($weather_url);
+	$raw_weather = fetch_external_contents($weather_url, array(), $content_type);
 
 	if ($raw_weather) {
-		$xml = simplexml_load_string($raw_weather);
+		if ( $forecast_type === 'current' ) {
+			$xml = json_decode( $raw_weather );
+		} else {
+			$xml = simplexml_load_string($raw_weather);
+		}
+
 		if ($xml) {
 			switch ($forecast_type) {
 				case 'forecastToday':
@@ -328,17 +337,19 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 				case 'current':
 				default:
 					// Make sure we get actual usable values before assigning them
-					$temp = preg_match('/[0-9]+/', @$xml->temp_f) ? (int)number_format((string)$xml->temp_f) : null; // strip decimal place
+					$temp = convert_c_to_f( $xml->temperature->value );
 					$weather['tempN'] = $temp;
 					$weather['temp'] = $temp !== null ? $temp.'&#186;' : null;
-					$weather['imgCode'] = !empty($xml->icon_url_name) ? (string)$xml->icon_url_name : null;
-
-					// Convert NOAA's weather icon names.
+					
+					$weather_img        = explode( '?', $xml->icon )[0];
+					$weather_img_split  = explode( '/', $weather_img );
+					$weather['imgCode'] = end( $weather_img_split );
+					
 					if ($weather['imgCode'] !== null) {
-						list($weather_img_name, $ext) = explode('.', $weather['imgCode']);
+						$weather_img_name = $weather['imgCode'];
 						$converted_status = convert_weather_status($weather_img_name);
 						$weather['imgCode'] = $converted_status['weather_code'];
-						$weather['condition'] = $converted_status['weather_condition'];
+						$weather['condition'] = $xml->textDescription;
 					}
 
 					// We assume the fetch was a success unless the
@@ -349,13 +360,13 @@ function make_new_cachedata($forecast_type, $old_cache_data, $cache_data_path) {
 
 					// Set image location URLs, other data
 					if (isset($weather['imgCode']) || intval($weather['imgCode'])) {
-						$weather['imgSmall']  	  = SITE_URL.'img/weather-small/'.$weather['imgCode'].'.png';
-						$weather['imgMedium'] 	  = SITE_URL.'img/weather-medium/'.$weather['imgCode'].'.png';
-						$weather['imgLarge']  	  = SITE_URL.'img/weather-large/WC'.$weather['imgCode'].'.png';
+						$weather['imgSmall']  = SITE_URL.'img/weather-small/'.$weather['imgCode'].'.png';
+						$weather['imgMedium'] = SITE_URL.'img/weather-medium/'.$weather['imgCode'].'.png';
+						$weather['imgLarge']  = SITE_URL.'img/weather-large/WC'.$weather['imgCode'].'.png';
 					}
-					$weather['provider']  	  = (string)@$xml->credit_URL;
-					$weather['feedUpdatedAt'] = (string)@$xml->observation_time_rfc822;
-					$weather['date'] 	  	  = date('Y-m-d', strtotime($weather['feedUpdatedAt']));
+					$weather['provider']  	  = $xml->station;
+					$weather['feedUpdatedAt'] = $xml->timestamp;
+					$weather['date'] 	  	  = date('Y-m-d', strtotime($xml->timestamp));
 
 					break;
 			}
@@ -593,6 +604,12 @@ function convert_weather_status($weather_img_name) {
 	return array('weather_code' => $weather_code, 'weather_condition' => $weather_condition);
 }
 
+/**
+ * Converts celsius to fahrenheit
+ */
+function convert_c_to_f( $temp ) {
+	return round( $temp * (9 / 5) + 32 );
+}
 
 // Display weather data
 header('Content-Type: application/json');
